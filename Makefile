@@ -6,7 +6,13 @@ endif
 
 LDFLAGS := -w -s
 
-SRCS	= src/main.go
+SRCS	= \
+	src/lib/color/rgb8.go \
+	src/lib/date/date.go \
+	src/lib/file/file.go \
+	src/lib/svg/pixela_svgparser.go \
+	src/setting.go \
+	src/main.go
 
 # --------------------------------------------------
 
@@ -15,6 +21,9 @@ all: $(TARGET)
 $(TARGET): $(SRCS)
 	go get ./...
 	go build -ldflags "$(LDFLAGS)" -o $@ ./src
+
+run:
+	./$(TARGET)
 
 clean:
 	rm -f $(TARGET)
