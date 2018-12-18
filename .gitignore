@@ -1,1 +1,5 @@
+_samples
+
 *.exe
+memo.md
+src/tests/dev/null
