@@ -23,6 +23,12 @@ $(TARGET): $(SRCS)
 	go get ./...
 	go build -ldflags "$(LDFLAGS)" -o $@ ./src
 
+test:
+	go test ./src/tests
+
+bench:
+	go test ./src/tests -bench .
+
 run:
 	./$(TARGET)
 
