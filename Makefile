@@ -11,6 +11,7 @@ SRCS	= \
 	src/lib/date/date.go \
 	src/lib/file/file.go \
 	src/lib/svg/pixela_svgparser.go \
+	src/lib/image/dot_imageparser.go \
 	src/setting.go \
 	src/main.go
 

@@ -3,13 +3,16 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"strings"
 
 	"pixela_art/src/lib/file"
+	"pixela_art/src/lib/image"
 	"pixela_art/src/lib/svg"
 )
 
 func main() {
+	// SVGの読み込み
 	buf, err := file.ReadAll("./vim-pixela.svg")
 	if err != nil {
 		log.Fatal(err)
@@ -28,5 +31,31 @@ func main() {
 			elem.Date.GetString(),
 			elem.Count,
 			elem.Rgb.ToColorCode())
+	}
+
+	// 画像の読み込み
+	file, err := os.Open("./image/dot/vim.png")
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	dots, err := image.ParseDotImage(file)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	// save
+	file, err = os.OpenFile("./dots.dat", os.O_RDWR|os.O_CREATE, 0755)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	err = dots.Save(file)
+	if err != nil {
+		log.Fatal(err)
+		return
 	}
 }
