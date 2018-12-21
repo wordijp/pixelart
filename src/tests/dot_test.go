@@ -34,8 +34,8 @@ const (
 )
 
 // TestDotParseEncodeDecode -- 画像のパース、エンコード、デコードをテストする
+// NOTE: datfile作成も兼ねる
 func TestDotParseEncodeDecode(t *testing.T) {
-
 	var dots image.DotImageData
 	// TEST: パーステスト
 	{
@@ -110,30 +110,34 @@ func TestDotParseEncodeDecode(t *testing.T) {
 
 // 画像を読み込み、パースする
 func BenchmarkParseDotImage(t *testing.B) {
-	for i := 0; i < t.N; i++ {
-		file, err := os.Open(imgfile)
-		if err != nil {
-			panic(err)
-		}
-		defer file.Close()
+	file, err := os.Open(imgfile)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
 
-		//file.Seek(0, 0)
+	t.ResetTimer()
+	for i := 0; i < t.N; i++ {
+		file.Seek(0, 0)
+
 		_, err = image.ParseDotImage(file)
 		if err != nil {
 			panic(err)
 		}
-
 	}
 }
 
 // パース済み画像情報を読み込む
 func BenchmarkLoadParsedDotImage(t *testing.B) {
+	file, err := os.Open(datfile)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	t.ResetTimer()
 	for i := 0; i < t.N; i++ {
-		file, err := os.Open(datfile)
-		if err != nil {
-			panic(err)
-		}
-		defer file.Close()
+		file.Seek(0, 0)
 
 		_, err = image.LoadDotImageData(file)
 		if err != nil {

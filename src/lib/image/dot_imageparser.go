@@ -1,13 +1,11 @@
 package image
 
 import (
+	"bytes"
 	"image/png"
 	"io"
 
-	"bytes"
-	"encoding/gob"
-
-	//"github.com/tinylib/msgp"
+	"github.com/vmihailenco/msgpack"
 
 	color "pixela_art/src/lib/color"
 )
@@ -19,7 +17,7 @@ type DotImageData struct {
 
 // DotImageElement -- ドット情報
 type DotImageElement struct {
-	X, Y int
+	X, Y int16
 	Rgb  color.RGB8
 }
 
@@ -39,8 +37,8 @@ func ParseDotImage(r io.Reader) (data DotImageData, err error) {
 			// 透明は弾く
 			if a > 0 {
 				data.Elems = append(data.Elems, DotImageElement{
-					X:   x,
-					Y:   y,
+					X:   int16(x),
+					Y:   int16(y),
 					Rgb: color.RGB8Model.Convert(c).(color.RGB8),
 				})
 			}
@@ -53,7 +51,7 @@ func ParseDotImage(r io.Reader) (data DotImageData, err error) {
 // Save -- ドット情報を書き出す
 // NOTE: パース済みデータを読み書きして高速化
 func (d *DotImageData) Save(w io.Writer) error {
-	buf, err := gobEncode(d)
+	buf, err := msgpackEncode(d)
 	if err != nil {
 		return err
 	}
@@ -65,53 +63,61 @@ func (d *DotImageData) Save(w io.Writer) error {
 
 	return nil
 }
-func gobEncode(d *DotImageData) (*bytes.Buffer, error) {
+func msgpackEncode(d *DotImageData) (*bytes.Buffer, error) {
 	buf := bytes.NewBuffer(nil)
-	encoder := gob.NewEncoder(buf)
+	encoder := msgpack.NewEncoder(buf)
 
-	err := gobEncodeDotImageData(d, encoder)
+	length := uint32(len(d.Elems))
+
+	err := encoder.EncodeUint32(length)
 	if err != nil {
 		return nil, err
 	}
 
+	// 各要素のビット情報をエンコード
+	var bits uint64
+	for i := uint32(0); i < length; i++ {
+		x := uint64(d.Elems[i].X)
+		y := uint64(d.Elems[i].Y)
+		r := uint64(d.Elems[i].Rgb.R)
+		g := uint64(d.Elems[i].Rgb.G)
+		b := uint64(d.Elems[i].Rgb.B)
+
+		bits = x<<48 | y<<32 | r<<16 | g<<8 | b
+
+		if err := encoder.EncodeUint64(bits); err != nil {
+			return nil, err
+		}
+	}
+
 	return buf, nil
-}
-func gobEncodeDotImageData(d *DotImageData, encoder *gob.Encoder) error {
-	err := encoder.Encode(uint32(len(d.Elems)))
-	if err != nil {
-		return err
-	}
-
-	return encoder.Encode(d.Elems)
-}
-func gobEncodeDotImageElement(elem *DotImageElement, encoder *gob.Encoder) error {
-	if err := encoder.Encode(elem); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // LoadDotImageData -- ドット情報を読み込む
 func LoadDotImageData(r io.Reader) (data DotImageData, err error) {
-	return gobDecode(r)
+	return msgpackDecode(r)
 }
-func gobDecode(r io.Reader) (data DotImageData, err error) {
-	decoder := gob.NewDecoder(r)
 
-	var nelems uint32
-	if err = decoder.Decode(&nelems); err != nil {
+func msgpackDecode(r io.Reader) (data DotImageData, err error) {
+	decoder := msgpack.NewDecoder(r)
+
+	var length uint32
+	if length, err = decoder.DecodeUint32(); err != nil {
 		return
 	}
 
-	data.Elems = make([]DotImageElement, nelems, nelems)
-	err = decoder.Decode(&data.Elems)
-
-	return
-}
-func gobDecodeDotImageElement(decoder *gob.Decoder) (elem DotImageElement, err error) {
-	if err = decoder.Decode(&elem); err != nil {
-		return
+	data.Elems = make([]DotImageElement, length, length)
+	for i := uint32(0); i < length; i++ {
+		// ビット情報からデコード
+		var bits uint64
+		if bits, err = decoder.DecodeUint64(); err != nil {
+			return
+		}
+		data.Elems[i].X = int16(bits >> 48)
+		data.Elems[i].Y = int16(bits >> 32)
+		data.Elems[i].Rgb.R = uint8(bits >> 16)
+		data.Elems[i].Rgb.G = uint8(bits >> 8)
+		data.Elems[i].Rgb.B = uint8(bits >> 0)
 	}
 
 	return
