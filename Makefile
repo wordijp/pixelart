@@ -13,6 +13,7 @@ SRCS	= src/main.go
 all: $(TARGET)
 
 $(TARGET): $(SRCS)
+	go get ./...
 	go build -ldflags "$(LDFLAGS)" -o $@ ./src
 
 clean:
