@@ -17,6 +17,7 @@ func main() {
 		log.Fatal(err)
 		return
 	}
+	defer file.Close()
 
 	svgs, err := svg.ParsePixelaSvg(file)
 	if err != nil {
@@ -32,6 +33,7 @@ func main() {
 			log.Fatal(err)
 			return
 		}
+		defer file.Close()
 
 		dots, err = image.ParseDotImage(file)
 		if err != nil {
@@ -47,6 +49,7 @@ func main() {
 			log.Fatal(err)
 			return
 		}
+		defer file.Close()
 
 		err = dots.Save(file)
 		if err != nil {

@@ -73,6 +73,7 @@ func TestDotParseEncodeDecode(t *testing.T) {
 		if err != nil {
 			t.Errorf("error open: %s", err)
 		}
+		defer file.Close()
 
 		dots2, err = image.LoadDotImageData(file)
 		if err != nil {
