@@ -30,12 +30,12 @@ const (
 )
 
 const (
-	imgfile = testdata + "/dot/vim.png"
-	datfile = tmp + "/vim_dots.dat"
+	imgfile  = testdata + "/dot/vim.png"
+	dotsfile = tmp + "/vim_dots.dat"
 )
 
 // TestDotParseEncodeDecode -- 画像のパース、エンコード、デコードをテストする
-// NOTE: datfile作成も兼ねる
+// NOTE: dotsfile作成も兼ねる
 func TestDotParseEncodeDecode(t *testing.T) {
 	var dots image.DotImageData
 	// TEST: パーステスト
@@ -54,7 +54,7 @@ func TestDotParseEncodeDecode(t *testing.T) {
 
 	// TEST: エンコードテスト
 	{
-		file, err := os.OpenFile(datfile, os.O_WRONLY|os.O_CREATE, 0755)
+		file, err := os.OpenFile(dotsfile, os.O_WRONLY|os.O_CREATE, 0755)
 		if err != nil {
 			t.Errorf("error create: %s", err)
 		}
@@ -69,7 +69,7 @@ func TestDotParseEncodeDecode(t *testing.T) {
 	var dots2 image.DotImageData
 	// TEST: デコードテスト
 	{
-		file, err := os.Open(datfile)
+		file, err := os.Open(dotsfile)
 		if err != nil {
 			t.Errorf("error open: %s", err)
 		}
@@ -104,6 +104,19 @@ func TestDotParseEncodeDecode(t *testing.T) {
 			if dots.Elems[i].Rgb.B != dots2.Elems[i].Rgb.B {
 				t.Errorf("B wrong")
 			}
+		}
+
+		if dots.MinX != dots2.MinX {
+			t.Errorf("MinX wrong")
+		}
+		if dots.MaxX != dots2.MaxX {
+			t.Errorf("MaxX wrong")
+		}
+		if dots.MinY != dots2.MinY {
+			t.Errorf("MinY wrong")
+		}
+		if dots.MaxY != dots2.MaxY {
+			t.Errorf("MaxY wrong")
 		}
 	}
 }
@@ -150,7 +163,7 @@ func BenchmarkParseDotImage(t *testing.B) {
 
 // パース済み画像情報を読み込む
 func BenchmarkLoadParsedDotImage(t *testing.B) {
-	file, err := os.Open(datfile)
+	file, err := os.Open(dotsfile)
 	if err != nil {
 		panic(err)
 	}

@@ -100,6 +100,20 @@ func msgpackEncode(d *DotImageData) (*bytes.Buffer, error) {
 		}
 	}
 
+	{
+		var bits uint64
+		minx := uint64(d.MinX)
+		maxx := uint64(d.MaxX)
+		miny := uint64(d.MinY)
+		maxy := uint64(d.MaxY)
+
+		bits = minx<<48 | maxx<<32 | miny<<16 | maxy
+
+		if err := encoder.EncodeUint64(bits); err != nil {
+			return nil, err
+		}
+	}
+
 	return buf, nil
 }
 
@@ -128,6 +142,17 @@ func msgpackDecode(r io.Reader) (data DotImageData, err error) {
 		data.Elems[i].Rgb.R = uint8(bits >> 16)
 		data.Elems[i].Rgb.G = uint8(bits >> 8)
 		data.Elems[i].Rgb.B = uint8(bits >> 0)
+	}
+
+	{
+		var bits uint64
+		if bits, err = decoder.DecodeUint64(); err != nil {
+			return
+		}
+		data.MinX = int16(bits >> 48)
+		data.MaxX = int16(bits >> 32)
+		data.MinY = int16(bits >> 16)
+		data.MaxY = int16(bits >> 0)
 	}
 
 	return
