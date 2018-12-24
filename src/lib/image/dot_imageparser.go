@@ -15,8 +15,9 @@ import (
 
 // DotImageData -- ドット用画像をパースする
 type DotImageData struct {
-	Elems []DotImageElement
-	W, H  int16
+	Elems      []DotImageElement
+	MinX, MaxX int16
+	MinY, MaxY int16
 }
 
 // DotImageElement -- ドット情報
@@ -49,8 +50,10 @@ func ParseDotImage(r io.Reader) (data DotImageData, err error) {
 		}
 	}
 
-	data.W = int16(b.Max.X - b.Min.X)
-	data.H = int16(b.Max.Y - b.Min.Y)
+	data.MinX = int16(b.Min.X)
+	data.MaxX = int16(b.Max.X)
+	data.MinY = int16(b.Min.Y)
+	data.MaxY = int16(b.Max.Y)
 
 	return
 }
@@ -134,8 +137,10 @@ func msgpackDecode(r io.Reader) (data DotImageData, err error) {
 func (d DotImageData) ApplyColorLevels(cl ColorLevels, colorLevelPercentage []float64) DotImageData {
 	dots := DotImageData{
 		Elems: make([]DotImageElement, len(d.Elems), len(d.Elems)),
-		H:     d.H,
-		W:     d.W,
+		MinX:  d.MinX,
+		MaxX:  d.MaxX,
+		MinY:  d.MinY,
+		MaxY:  d.MaxY,
 	}
 
 	for i, length := 0, len(d.Elems); i < length; i++ {
@@ -162,7 +167,7 @@ func (d DotImageData) ApplyColorLevels(cl ColorLevels, colorLevelPercentage []fl
 func (d DotImageData) WriteSvg(w io.Writer) {
 	s := svgo.New(w)
 
-	s.Startraw(fmt.Sprintf("viewBox=\"%d %d %d %d\"", 0, 0, d.W*10, d.H*10))
+	s.Startraw(fmt.Sprintf("viewBox=\"%d %d %d %d\"", d.MinX*10, d.MinY*10, (d.MaxX-d.MinX)*10, (d.MaxY-d.MinY)*10))
 	for _, x := range d.Elems {
 		s.Rect(int(x.X)*10, int(x.Y)*10, 9, 9, fmt.Sprintf("fill=\"%s\"", x.Rgb.ToColorCode()))
 	}
