@@ -2,12 +2,15 @@ package image
 
 import (
 	"bytes"
+	"fmt"
 	"image/png"
 	"io"
 
+	svgo "github.com/ajstarks/svgo"
 	"github.com/vmihailenco/msgpack"
 
 	color "pixela_art/src/lib/color"
+	"pixela_art/src/lib/math"
 )
 
 // DotImageData -- ドット用画像をパースする
@@ -125,4 +128,43 @@ func msgpackDecode(r io.Reader) (data DotImageData, err error) {
 	}
 
 	return
+}
+
+// ApplyColorLevels -- ドットにカラーレベルを適用する
+func (d DotImageData) ApplyColorLevels(cl ColorLevels, colorLevelPercentage []float64) DotImageData {
+	dots := DotImageData{
+		Elems: make([]DotImageElement, len(d.Elems), len(d.Elems)),
+		H:     d.H,
+		W:     d.W,
+	}
+
+	for i, length := 0, len(d.Elems); i < length; i++ {
+		// 色相固定で、彩度・明度に割合適用
+
+		// HSVで計算し
+		hsv := d.Elems[i].Rgb.ToHSV()
+		// 彩度は0へ
+		hsv.S = uint8(math.Lerpf(float64(hsv.S), 0.0, 1.0-colorLevelPercentage[cl.levels[i]]))
+		// 明度は100へ
+		hsv.V = uint8(math.Lerpf(float64(hsv.V), 100.0, 1.0-colorLevelPercentage[cl.levels[i]]))
+
+		// RGBに戻す
+		dots.Elems[i].Rgb = hsv.ToRGB8()
+
+		dots.Elems[i].X = d.Elems[i].X
+		dots.Elems[i].Y = d.Elems[i].Y
+	}
+
+	return dots
+}
+
+// WriteSvg -- SVGとして書き出す
+func (d DotImageData) WriteSvg(w io.Writer) {
+	s := svgo.New(w)
+
+	s.Startraw(fmt.Sprintf("viewBox=\"%d %d %d %d\"", 0, 0, d.W*10, d.H*10))
+	for _, x := range d.Elems {
+		s.Rect(int(x.X)*10, int(x.Y)*10, 9, 9, fmt.Sprintf("fill=\"%s\"", x.Rgb.ToColorCode()))
+	}
+	s.End()
 }
