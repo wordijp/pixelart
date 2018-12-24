@@ -46,7 +46,7 @@ LEVEL_FOR:
 		for j := 0; j < count; j++ {
 			cl.levels[levelI] = level
 			levelI++
-			if levelI > len(cl.levels) {
+			if levelI >= len(cl.levels) {
 				break LEVEL_FOR
 			}
 		}
@@ -85,7 +85,7 @@ func scaleArray(a []int, total int) (scaleA []int, scale float32) {
 
 		if scaleTotal > total {
 			// ここに来る？
-			log.Printf("warn: scaleTotal(%d) > total(%d)", scaleTotal, total)
+			log.Printf("warn: sum(%d) to scaleTotal(%d) > total(%d)", sum, scaleTotal, total)
 		}
 		if scaleTotal >= total {
 			break
