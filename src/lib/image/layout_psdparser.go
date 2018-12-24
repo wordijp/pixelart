@@ -261,9 +261,97 @@ func (d *LayoutData) Save(w io.Writer) error {
 }
 func msgpackEncodeLayout(d *LayoutData) (*bytes.Buffer, error) {
 	buf := bytes.NewBuffer(nil)
-	_ = msgpack.NewEncoder(buf)
+	encoder := msgpack.NewEncoder(buf)
 
-	// TODO: エンコード処理
+	// BackgroundLayer
+	{
+		length := uint32(len(d.Bg.Elems))
+
+		err := encoder.EncodeUint32(length)
+		if err != nil {
+			return nil, err
+		}
+
+		// 各要素のビット情報をエンコード
+		var bits uint64
+		for i := uint32(0); i < length; i++ {
+			x := uint64(d.Bg.Elems[i].X)
+			y := uint64(d.Bg.Elems[i].Y)
+			r := uint64(d.Bg.Elems[i].Rgb.R)
+			g := uint64(d.Bg.Elems[i].Rgb.G)
+			b := uint64(d.Bg.Elems[i].Rgb.B)
+
+			bits = x<<48 | y<<32 | r<<16 | g<<8 | b
+
+			if err := encoder.EncodeUint64(bits); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	// PlaceLayer
+	{
+		length := uint32(len(d.Place.Elems))
+
+		err := encoder.EncodeUint32(length)
+		if err != nil {
+			return nil, err
+		}
+
+		// 各要素のビット情報のエンコード
+		for i := uint32(0); i < length; i++ {
+
+			// xy
+			{
+				elemLength := uint32(len(d.Place.Elems[i].XY))
+
+				err := encoder.EncodeUint32(elemLength)
+				if err != nil {
+					return nil, err
+				}
+
+				var bits uint32
+				for j := uint32(0); j < elemLength; j++ {
+					x := uint32(d.Place.Elems[i].XY[j].X)
+					y := uint32(d.Place.Elems[i].XY[j].Y)
+
+					bits = x<<16 | y
+
+					if err := encoder.EncodeUint32(bits); err != nil {
+						return nil, err
+					}
+				}
+			}
+
+			// Rgb
+			{
+				var bits uint32
+				r := uint32(d.Place.Elems[i].Rgb.R)
+				g := uint32(d.Place.Elems[i].Rgb.G)
+				b := uint32(d.Place.Elems[i].Rgb.B)
+
+				bits = r<<16 | g<<8 | b
+
+				if err := encoder.EncodeUint32(bits); err != nil {
+					return nil, err
+				}
+			}
+		}
+	}
+
+	{
+		var bits uint64
+		minx := uint64(d.MinX)
+		maxx := uint64(d.MaxX)
+		miny := uint64(d.MinY)
+		maxy := uint64(d.MaxY)
+
+		bits = minx<<48 | maxx<<32 | miny<<16 | maxy
+
+		if err := encoder.EncodeUint64(bits); err != nil {
+			return nil, err
+		}
+	}
 
 	return buf, nil
 }
@@ -273,9 +361,81 @@ func LoadPsdLayoutData(r io.Reader) (data LayoutData, err error) {
 	return msgpackDecodeLayout(r)
 }
 func msgpackDecodeLayout(r io.Reader) (data LayoutData, err error) {
-	_ = msgpack.NewDecoder(r)
+	decoder := msgpack.NewDecoder(r)
 
-	// TODO: デコード処理
+	// BackgroundLayer
+	{
+		var length uint32
+		if length, err = decoder.DecodeUint32(); err != nil {
+			return
+		}
+
+		data.Bg.Elems = make([]LayoutBackgroundElement, length, length)
+		for i := uint32(0); i < length; i++ {
+			// ビット情報からデコード
+			var bits uint64
+			if bits, err = decoder.DecodeUint64(); err != nil {
+				return
+			}
+			data.Bg.Elems[i].X = int16(bits >> 48)
+			data.Bg.Elems[i].Y = int16(bits >> 32)
+			data.Bg.Elems[i].Rgb.R = uint8(bits >> 16)
+			data.Bg.Elems[i].Rgb.G = uint8(bits >> 8)
+			data.Bg.Elems[i].Rgb.B = uint8(bits >> 0)
+		}
+	}
+
+	// PlaceLayer
+	{
+		var length uint32
+		if length, err = decoder.DecodeUint32(); err != nil {
+			return
+		}
+
+		data.Place.Elems = make([]LayoutPlaceElement, length, length)
+		for i := uint32(0); i < length; i++ {
+
+			// xy
+			{
+				var elemLength uint32
+				if elemLength, err = decoder.DecodeUint32(); err != nil {
+					return
+				}
+
+				data.Place.Elems[i].XY = make([]point, elemLength, elemLength)
+				for j := uint32(0); j < elemLength; j++ {
+					var bits uint32
+					if bits, err = decoder.DecodeUint32(); err != nil {
+						return
+					}
+					data.Place.Elems[i].XY[j].X = int16(bits >> 16)
+					data.Place.Elems[i].XY[j].Y = int16(bits >> 0)
+				}
+			}
+
+			// Rgb
+			{
+				var bits uint32
+				if bits, err = decoder.DecodeUint32(); err != nil {
+					return
+				}
+				data.Place.Elems[i].Rgb.R = uint8(bits >> 16)
+				data.Place.Elems[i].Rgb.G = uint8(bits >> 8)
+				data.Place.Elems[i].Rgb.B = uint8(bits >> 0)
+			}
+		}
+	}
+
+	{
+		var bits uint64
+		if bits, err = decoder.DecodeUint64(); err != nil {
+			return
+		}
+		data.MinX = int16(bits >> 48)
+		data.MaxX = int16(bits >> 32)
+		data.MinY = int16(bits >> 16)
+		data.MaxY = int16(bits >> 0)
+	}
 
 	return
 }
