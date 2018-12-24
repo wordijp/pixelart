@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"pixela_art/src/lib/color"
 	"pixela_art/src/lib/image"
 )
 
@@ -103,6 +104,25 @@ func TestDotParseEncodeDecode(t *testing.T) {
 				t.Errorf("B wrong")
 			}
 		}
+	}
+}
+
+// TestRGB8ToHSV -- RGB8 to HSVテスト
+func TestRGB8ToHSV(t *testing.T) {
+	rgb := color.RGB8{R: 214, G: 230, B: 133}
+	hsv := rgb.ToHSV()
+	if hsv.H != 69 || hsv.S != 42 || hsv.V != 90 {
+		t.Errorf("HSV invalid:(%d %d %d)", hsv.H, hsv.S, hsv.V)
+	}
+}
+
+// TestHSVToRGB8 -- HSV to RGB8テスト
+func TestHSVToRGB8(t *testing.T) {
+	hsv := color.HSV{H: 117, S: 60, V: 63}
+	rgb := hsv.ToRGB8()
+
+	if rgb.R != 69 || rgb.G != 160 || rgb.B != 64 {
+		t.Errorf("RGB invalid:(%d %d %d)", rgb.R, rgb.G, rgb.B)
 	}
 }
 

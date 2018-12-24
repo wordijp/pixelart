@@ -18,6 +18,45 @@ func (c RGB8) RGBA() (r, g, b, a uint32) {
 	panic("do not use") // Colorインターフェースのために実装は必要だが、使わない
 }
 
+// ToHSV - RGB8 to HSV
+func (c RGB8) ToHSV() HSV {
+	R := float64(c.R)
+	G := float64(c.G)
+	B := float64(c.B)
+
+	max := math.Max(math.Max(R, G), B)
+	min := math.Min(math.Min(R, G), B)
+	V := max / 255.0 * 100
+
+	var H float64
+	var S float64
+	if max == min {
+		H = 0.0
+		S = 0.0
+	} else {
+		if max == R {
+			H = 60.0*(G-B)/(max-min) + 0
+		} else if max == G {
+			H = 60.0*(B-R)/(max-min) + 120.0
+		} else if max == B {
+			H = 60.0*(R-G)/(max-min) + 240.0
+		}
+
+		if H > 360.0 {
+			H -= 360.0
+		} else if H < 0.0 {
+			H += 360.0
+		}
+		S = (max - min) / max * 100.0
+	}
+
+	return HSV{
+		uint16(H),
+		uint8(S),
+		uint8(V),
+	}
+}
+
 var (
 	// RGB8Model -- RGB8変換モデル
 	RGB8Model = color.ModelFunc(rgb8Model)

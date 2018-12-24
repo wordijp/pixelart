@@ -9,7 +9,7 @@ import (
 	color "pixela_art/src/lib/color"
 	date "pixela_art/src/lib/date"
 
-	SVG "github.com/JoshVarga/svgparser"
+	SVG "github.com/wordijp/svgparser"
 )
 
 // PixelaData -- SVGパースデータ

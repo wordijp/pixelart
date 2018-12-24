@@ -13,6 +13,7 @@ import (
 // DotImageData -- ドット用画像をパースする
 type DotImageData struct {
 	Elems []DotImageElement
+	W, H  int16
 }
 
 // DotImageElement -- ドット情報
@@ -44,6 +45,9 @@ func ParseDotImage(r io.Reader) (data DotImageData, err error) {
 			}
 		}
 	}
+
+	data.W = int16(b.Max.X - b.Min.X)
+	data.H = int16(b.Max.Y - b.Min.Y)
 
 	return
 }
