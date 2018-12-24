@@ -18,6 +18,7 @@ SRCS	= \
 	src/lib/map/slicemap/slicemap.go \
 	src/lib/image/dot_imageparser.go \
 	src/lib/image/dot_colorlevel.go \
+	src/lib/image/layout_psdparser.go \
 	src/lib/testify/testify.go \
 	src/setting.go \
 	src/main.go

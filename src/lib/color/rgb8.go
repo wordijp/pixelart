@@ -13,6 +13,16 @@ type RGB8 struct {
 	R, G, B uint8
 }
 
+// Equal -- 同色か
+func (c RGB8) Equal(other RGB8) bool {
+	return c.R == other.R && c.G == other.G && c.B == other.B
+}
+
+// NonEqual -- 違う色か
+func (c RGB8) NonEqual(other RGB8) bool {
+	return c.R != other.R || c.G != other.G || c.B == other.B
+}
+
 // RGBA -- RGB8をrgbaに変換する
 func (c RGB8) RGBA() (r, g, b, a uint32) {
 	panic("do not use") // Colorインターフェースのために実装は必要だが、使わない

@@ -25,6 +25,12 @@ func main() {
 		return
 	}
 
+	//doDot(svgs)
+	doLayout(svgs)
+}
+
+// ドットアート処理
+func doDot(svgs svg.PixelaData) {
 	var dots image.DotImageData
 	// 画像の読み込み
 	{
@@ -73,6 +79,62 @@ func main() {
 
 	buf := bytes.NewBuffer(nil)
 	applyDots.WriteSvg(buf)
+
+	fmt.Println(buf.String())
+
+}
+
+// 配置アート処理
+func doLayout(svgs svg.PixelaData) {
+	// TODO: ...
+
+	var layouts image.LayoutData
+	// PSD画像の読み込み
+	{
+		file, err := os.Open("./image/layout/calendar.psd")
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+		defer file.Close()
+
+		layouts, err = image.ParsePsdLayout(file)
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+	}
+	//{
+	//    file, err := os.Open("./_tmp/calendar_layout.dat")
+	//    if err != nil {
+	//        log.Fatal(err)
+	//        return
+	//    }
+	//    defer file.Close()
+
+	//    layouts, err = image.LoadPsdLayoutData(file)
+	//}
+
+	// save
+	{
+		file, err := os.OpenFile("./_tmp/layouts.dat", os.O_WRONLY|os.O_CREATE, 0755)
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+		defer file.Close()
+
+		err = layouts.Save(file)
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+	}
+
+	// PSDの配置データを、SVGに変換する
+
+	buf := bytes.NewBuffer(nil)
+	layouts.WriteSvg(svgs, buf)
 
 	fmt.Println(buf.String())
 }
