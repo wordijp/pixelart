@@ -1,4 +1,4 @@
-package image
+package layout
 
 import (
 	"bytes"
@@ -14,37 +14,37 @@ import (
 	"github.com/oov/psd"
 	"github.com/vmihailenco/msgpack"
 
-	color "pixela_art/src/lib/color"
-	"pixela_art/src/lib/svg"
-	test "pixela_art/src/lib/testify"
+	"github.com/wordijp/pixelart/graph"
+	color "github.com/wordijp/pixelart/lib/color"
+	test "github.com/wordijp/pixelart/lib/testify"
 )
 
-// LayoutData -- 配置図用画像をパースする
-type LayoutData struct {
-	Bg         LayoutBackgroundLayer
-	Place      LayoutPlaceLayer
+// Data -- 配置図用画像をパースする
+type Data struct {
+	Bg         DataBackgroundLayer
+	Place      DataPlaceLayer
 	MinX, MaxX int16
 	MinY, MaxY int16
 }
 
-// LayoutBackgroundLayer -- 背景用レイヤーのパースデータ
-type LayoutBackgroundLayer struct {
-	Elems []LayoutBackgroundElement
+// DataBackgroundLayer -- 背景用レイヤーのパースデータ
+type DataBackgroundLayer struct {
+	Elems []DataBackgroundElement
 }
 
-// LayoutBackgroundElement -- 背景用レイヤーのドット情報
-type LayoutBackgroundElement struct {
+// DataBackgroundElement -- 背景用レイヤーのドット情報
+type DataBackgroundElement struct {
 	X, Y int16
 	Rgb  color.RGB8
 }
 
-// LayoutPlaceLayer -- 配置情報用レイヤーのパースデータ
-type LayoutPlaceLayer struct {
-	Elems []LayoutPlaceElement
+// DataPlaceLayer -- 配置情報用レイヤーのパースデータ
+type DataPlaceLayer struct {
+	Elems []DataPlaceElement
 }
 
-// LayoutPlaceElement -- 配置情報用レイヤーの配置情報
-type LayoutPlaceElement struct {
+// DataPlaceElement -- 配置情報用レイヤーの配置情報
+type DataPlaceElement struct {
 	XY  []point
 	Rgb color.RGB8
 }
@@ -53,8 +53,8 @@ type point struct {
 	X, Y int16
 }
 
-// ParsePsdLayout -- PSD画像をパースする
-func ParsePsdLayout(r io.Reader) (data LayoutData, err error) {
+// ParseLayoutPsd -- PSD画像をパースする
+func ParseLayoutPsd(r io.Reader) (data Data, err error) {
 	img, _, err := psd.Decode(r, &psd.DecodeOptions{SkipMergedImage: true})
 	if err != nil {
 		return
@@ -116,7 +116,7 @@ func ParsePsdLayout(r io.Reader) (data LayoutData, err error) {
 
 	return
 }
-func parseBackgroundLayer(bg psd.Layer) (data LayoutBackgroundLayer, err error) {
+func parseBackgroundLayer(bg psd.Layer) (data DataBackgroundLayer, err error) {
 	// NOTE: 多段Layerは無視
 
 	// 色情報をそのまま使う
@@ -128,7 +128,7 @@ func parseBackgroundLayer(bg psd.Layer) (data LayoutBackgroundLayer, err error) 
 			_, _, _, a := c.RGBA()
 			// 透明は弾く
 			if a > 0 {
-				data.Elems = append(data.Elems, LayoutBackgroundElement{
+				data.Elems = append(data.Elems, DataBackgroundElement{
 					X:   int16(x),
 					Y:   int16(y),
 					Rgb: color.RGB8Model.Convert(c).(color.RGB8),
@@ -139,7 +139,7 @@ func parseBackgroundLayer(bg psd.Layer) (data LayoutBackgroundLayer, err error) 
 
 	return
 }
-func parsePlaceLayer(oData *LayoutData, place psd.Layer, memo *[]bool, H, W int) (elems []LayoutPlaceElement, err error) {
+func parsePlaceLayer(oData *Data, place psd.Layer, memo *[]bool, H, W int) (elems []DataPlaceElement, err error) {
 
 	// ドットの色毎の機能を取り出す
 	img := place.Picker
@@ -197,7 +197,7 @@ var (
 	rgbMonth12 = color.RGB8{R: 0, G: 145, B: 64}
 )
 
-func collectByFloodFill(x, y int, img image.Image, b image.Rectangle, memo *[]bool, mx, my, H, W int) (elem LayoutPlaceElement, ok bool) {
+func collectByFloodFill(x, y int, img image.Image, b image.Rectangle, memo *[]bool, mx, my, H, W int) (elem DataPlaceElement, ok bool) {
 	if (*memo)[mx+my] {
 		return elem, false
 	}
@@ -213,7 +213,7 @@ func collectByFloodFill(x, y int, img image.Image, b image.Rectangle, memo *[]bo
 	elem.Rgb = rgb
 	return elem, true
 }
-func rec(elem *LayoutPlaceElement, parentRgb color.RGB8, x, y int, img image.Image, b image.Rectangle, memo *[]bool, mx, my, H, W int) {
+func rec(elem *DataPlaceElement, parentRgb color.RGB8, x, y int, img image.Image, b image.Rectangle, memo *[]bool, mx, my, H, W int) {
 	if (*memo)[mx+my] {
 		return
 	}
@@ -244,9 +244,9 @@ func rec(elem *LayoutPlaceElement, parentRgb color.RGB8, x, y int, img image.Ima
 	}
 }
 
-// Save -- 配置図情報を書き出す
+// WriteLayoutData -- 配置図情報を書き出す
 // NOTE: パース済みデータを読み書きして高速化
-func (d *LayoutData) Save(w io.Writer) error {
+func (d *Data) WriteLayoutData(w io.Writer) error {
 	buf, err := msgpackEncodeLayout(d)
 	if err != nil {
 		return err
@@ -259,7 +259,7 @@ func (d *LayoutData) Save(w io.Writer) error {
 
 	return nil
 }
-func msgpackEncodeLayout(d *LayoutData) (*bytes.Buffer, error) {
+func msgpackEncodeLayout(d *Data) (*bytes.Buffer, error) {
 	buf := bytes.NewBuffer(nil)
 	encoder := msgpack.NewEncoder(buf)
 
@@ -356,11 +356,11 @@ func msgpackEncodeLayout(d *LayoutData) (*bytes.Buffer, error) {
 	return buf, nil
 }
 
-// LoadPsdLayoutData -- 配置情報を読み込む
-func LoadPsdLayoutData(r io.Reader) (data LayoutData, err error) {
-	return msgpackDecodeLayout(r)
+// LoadLayoutData -- 配置情報を読み込む
+func LoadLayoutData(r io.Reader) (data Data, err error) {
+	return msgpackDecode(r)
 }
-func msgpackDecodeLayout(r io.Reader) (data LayoutData, err error) {
+func msgpackDecode(r io.Reader) (data Data, err error) {
 	decoder := msgpack.NewDecoder(r)
 
 	// BackgroundLayer
@@ -370,7 +370,7 @@ func msgpackDecodeLayout(r io.Reader) (data LayoutData, err error) {
 			return
 		}
 
-		data.Bg.Elems = make([]LayoutBackgroundElement, length, length)
+		data.Bg.Elems = make([]DataBackgroundElement, length, length)
 		for i := uint32(0); i < length; i++ {
 			// ビット情報からデコード
 			var bits uint64
@@ -392,7 +392,7 @@ func msgpackDecodeLayout(r io.Reader) (data LayoutData, err error) {
 			return
 		}
 
-		data.Place.Elems = make([]LayoutPlaceElement, length, length)
+		data.Place.Elems = make([]DataPlaceElement, length, length)
 		for i := uint32(0); i < length; i++ {
 
 			// xy
@@ -440,8 +440,8 @@ func msgpackDecodeLayout(r io.Reader) (data LayoutData, err error) {
 	return
 }
 
-// WriteSvg -- SVGとして書き出す
-func (d LayoutData) WriteSvg(svgs svg.PixelaData, w io.Writer) {
+// WriteSvgString -- SVGとして書き出す
+func (d Data) WriteSvgString(svgs graph.Data, w io.Writer) {
 	s := svgo.New(w)
 
 	s.Startraw(fmt.Sprintf("viewBox=\"%d %d %d %d\"", d.MinX*10, d.MinY*10, (d.MaxX-d.MinX)*10, (d.MaxY-d.MinY)*10))

@@ -1,23 +1,21 @@
 package main
 
 import (
-	//"fmt"
 	"os"
 	"testing"
 
-	//"pixela_art/src/lib/color"
-	"pixela_art/src/lib/image"
+	"github.com/wordijp/pixelart/layout"
 )
 
 const (
-	psdfile    = testdata + "/layout/calendar.psd"
+	psdfile    = image + "/layout/calendar.psd"
 	layoutfile = tmp + "/calendar_layout.dat"
 )
 
 // TestDotParseEncodeDecode -- 画像のパース、エンコード、デコードをテストする
 // NOTE: datfile作成も兼ねる
 func TestPsdLayoutParseEncodeDecode(t *testing.T) {
-	var layout image.LayoutData
+	var layouts layout.Data
 	// TEST: パーステスト
 	{
 		file, err := os.Open(psdfile)
@@ -26,7 +24,7 @@ func TestPsdLayoutParseEncodeDecode(t *testing.T) {
 		}
 		defer file.Close()
 
-		layout, err = image.ParsePsdLayout(file)
+		layouts, err = layout.ParseLayoutPsd(file)
 		if err != nil {
 			t.Errorf("error parse: %s", err)
 		}
@@ -40,13 +38,13 @@ func TestPsdLayoutParseEncodeDecode(t *testing.T) {
 		}
 		defer file.Close()
 
-		err = layout.Save(file)
+		err = layouts.WriteLayoutData(file)
 		if err != nil {
 			t.Errorf("error save: %s", err)
 		}
 	}
 
-	var layout2 image.LayoutData
+	var layout2 layout.Data
 	// TEST: デコードテスト
 	{
 		file, err := os.Open(layoutfile)
@@ -55,7 +53,7 @@ func TestPsdLayoutParseEncodeDecode(t *testing.T) {
 		}
 		defer file.Close()
 
-		layout2, err = image.LoadPsdLayoutData(file)
+		layout2, err = layout.LoadLayoutData(file)
 		if err != nil {
 			t.Errorf("error load: %s", err)
 		}
@@ -63,65 +61,65 @@ func TestPsdLayoutParseEncodeDecode(t *testing.T) {
 
 	// TEST: エンコード、デコード後のデータの内容が同じか
 	{
-		if len(layout.Bg.Elems) != len(layout2.Bg.Elems) {
-			t.Errorf("len(Elems) wrong(%d != %d)", len(layout.Bg.Elems), len(layout2.Bg.Elems))
+		if len(layouts.Bg.Elems) != len(layout2.Bg.Elems) {
+			t.Errorf("len(Elems) wrong(%d != %d)", len(layouts.Bg.Elems), len(layout2.Bg.Elems))
 		}
 
 		// BackgroundLayer
-		for i, length := 0, len(layout.Bg.Elems); i < length; i++ {
-			if layout.Bg.Elems[i].X != layout2.Bg.Elems[i].X {
+		for i, length := 0, len(layouts.Bg.Elems); i < length; i++ {
+			if layouts.Bg.Elems[i].X != layout2.Bg.Elems[i].X {
 				t.Errorf("X wrong")
 			}
-			if layout.Bg.Elems[i].Y != layout2.Bg.Elems[i].Y {
+			if layouts.Bg.Elems[i].Y != layout2.Bg.Elems[i].Y {
 				t.Errorf("Y wrong")
 			}
-			if layout.Bg.Elems[i].Rgb.R != layout2.Bg.Elems[i].Rgb.R {
+			if layouts.Bg.Elems[i].Rgb.R != layout2.Bg.Elems[i].Rgb.R {
 				t.Errorf("R wrong")
 			}
-			if layout.Bg.Elems[i].Rgb.G != layout2.Bg.Elems[i].Rgb.G {
+			if layouts.Bg.Elems[i].Rgb.G != layout2.Bg.Elems[i].Rgb.G {
 				t.Errorf("G wrong")
 			}
-			if layout.Bg.Elems[i].Rgb.B != layout2.Bg.Elems[i].Rgb.B {
+			if layouts.Bg.Elems[i].Rgb.B != layout2.Bg.Elems[i].Rgb.B {
 				t.Errorf("B wrong")
 			}
 		}
 
 		// PlaceLayer
-		for i, length := 0, len(layout.Place.Elems); i < length; i++ {
-			if len(layout.Place.Elems[i].XY) != len(layout2.Place.Elems[i].XY) {
-				t.Errorf("len(Elems) wrong(%d != %d)", len(layout.Place.Elems[i].XY), len(layout2.Place.Elems[i].XY))
+		for i, length := 0, len(layouts.Place.Elems); i < length; i++ {
+			if len(layouts.Place.Elems[i].XY) != len(layout2.Place.Elems[i].XY) {
+				t.Errorf("len(Elems) wrong(%d != %d)", len(layouts.Place.Elems[i].XY), len(layout2.Place.Elems[i].XY))
 			}
 
-			for j, elemLength := 0, len(layout.Place.Elems[i].XY); j < elemLength; j++ {
-				if layout.Place.Elems[i].XY[j].X != layout2.Place.Elems[i].XY[j].X {
+			for j, elemLength := 0, len(layouts.Place.Elems[i].XY); j < elemLength; j++ {
+				if layouts.Place.Elems[i].XY[j].X != layout2.Place.Elems[i].XY[j].X {
 					t.Errorf("XY[j].X wrong")
 				}
-				if layout.Place.Elems[i].XY[j].Y != layout2.Place.Elems[i].XY[j].Y {
+				if layouts.Place.Elems[i].XY[j].Y != layout2.Place.Elems[i].XY[j].Y {
 					t.Errorf("XY[j].Y wrong")
 				}
 			}
 
-			if layout.Place.Elems[i].Rgb.R != layout2.Place.Elems[i].Rgb.R {
+			if layouts.Place.Elems[i].Rgb.R != layout2.Place.Elems[i].Rgb.R {
 				t.Errorf("R wrong")
 			}
-			if layout.Place.Elems[i].Rgb.G != layout2.Place.Elems[i].Rgb.G {
+			if layouts.Place.Elems[i].Rgb.G != layout2.Place.Elems[i].Rgb.G {
 				t.Errorf("G wrong")
 			}
-			if layout.Place.Elems[i].Rgb.B != layout2.Place.Elems[i].Rgb.B {
+			if layouts.Place.Elems[i].Rgb.B != layout2.Place.Elems[i].Rgb.B {
 				t.Errorf("B wrong")
 			}
 		}
 
-		if layout.MinX != layout2.MinX {
+		if layouts.MinX != layout2.MinX {
 			t.Errorf("MinX wrong")
 		}
-		if layout.MaxX != layout2.MaxX {
+		if layouts.MaxX != layout2.MaxX {
 			t.Errorf("MaxX wrong")
 		}
-		if layout.MinY != layout2.MinY {
+		if layouts.MinY != layout2.MinY {
 			t.Errorf("MinY wrong")
 		}
-		if layout.MaxY != layout2.MaxY {
+		if layouts.MaxY != layout2.MaxY {
 			t.Errorf("MaxY wrong")
 		}
 	}
@@ -130,7 +128,7 @@ func TestPsdLayoutParseEncodeDecode(t *testing.T) {
 // 画像を読み込んでパースと、パース後を読み込むのとどちらが速いか
 
 // 画像を読み込み、パースする
-func BenchmarkParsePsdLayoutImage(t *testing.B) {
+func BenchmarkParseLayoutPsd(t *testing.B) {
 	file, err := os.Open(psdfile)
 	if err != nil {
 		panic(err)
@@ -141,7 +139,7 @@ func BenchmarkParsePsdLayoutImage(t *testing.B) {
 	for i := 0; i < t.N; i++ {
 		file.Seek(0, 0)
 
-		_, err = image.ParsePsdLayout(file)
+		_, err = layout.ParseLayoutPsd(file)
 		if err != nil {
 			panic(err)
 		}
@@ -149,7 +147,7 @@ func BenchmarkParsePsdLayoutImage(t *testing.B) {
 }
 
 // パース済み画像情報を読み込む
-func BenchmarkLoadParsedPsdLayoutImage(t *testing.B) {
+func BenchmarkLoadLayoutData(t *testing.B) {
 	file, err := os.Open(layoutfile)
 	if err != nil {
 		panic(err)
@@ -160,7 +158,7 @@ func BenchmarkLoadParsedPsdLayoutImage(t *testing.B) {
 	for i := 0; i < t.N; i++ {
 		file.Seek(0, 0)
 
-		_, err = image.LoadPsdLayoutData(file)
+		_, err = layout.LoadLayoutData(file)
 		if err != nil {
 			panic(err)
 		}

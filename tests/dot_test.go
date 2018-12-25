@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"pixela_art/src/lib/color"
-	"pixela_art/src/lib/image"
+	"github.com/wordijp/pixelart/dot"
+	"github.com/wordijp/pixelart/lib/color"
 )
 
 func TestMain(m *testing.M) {
@@ -25,19 +25,19 @@ func teardown() {
 }
 
 const (
-	tmp      = "../../_tmp"
-	testdata = "../../testdata"
+	tmp   = "../_tmp"
+	image = "../example/image"
 )
 
 const (
-	imgfile  = testdata + "/dot/vim.png"
+	imgfile  = image + "/dot/vim.png"
 	dotsfile = tmp + "/vim_dots.dat"
 )
 
 // TestDotParseEncodeDecode -- 画像のパース、エンコード、デコードをテストする
 // NOTE: dotsfile作成も兼ねる
 func TestDotParseEncodeDecode(t *testing.T) {
-	var dots image.DotImageData
+	var dots dot.Data
 	// TEST: パーステスト
 	{
 		file, err := os.Open(imgfile)
@@ -46,7 +46,7 @@ func TestDotParseEncodeDecode(t *testing.T) {
 		}
 		defer file.Close()
 
-		dots, err = image.ParseDotImage(file)
+		dots, err = dot.ParseDotPng(file)
 		if err != nil {
 			t.Errorf("error parse: %s", err)
 		}
@@ -60,13 +60,13 @@ func TestDotParseEncodeDecode(t *testing.T) {
 		}
 		defer file.Close()
 
-		err = dots.Save(file)
+		err = dots.WriteDotData(file)
 		if err != nil {
 			t.Errorf("error save: %s", err)
 		}
 	}
 
-	var dots2 image.DotImageData
+	var dots2 dot.Data
 	// TEST: デコードテスト
 	{
 		file, err := os.Open(dotsfile)
@@ -75,7 +75,7 @@ func TestDotParseEncodeDecode(t *testing.T) {
 		}
 		defer file.Close()
 
-		dots2, err = image.LoadDotImageData(file)
+		dots2, err = dot.LoadDotData(file)
 		if err != nil {
 			t.Errorf("error load: %s", err)
 		}
@@ -143,7 +143,7 @@ func TestHSVToRGB8(t *testing.T) {
 // 画像を読み込んでパースと、パース後を読み込むのとどちらが速いか
 
 // 画像を読み込み、パースする
-func BenchmarkParseDotImage(t *testing.B) {
+func BenchmarkParseDotPng(t *testing.B) {
 	file, err := os.Open(imgfile)
 	if err != nil {
 		panic(err)
@@ -154,7 +154,7 @@ func BenchmarkParseDotImage(t *testing.B) {
 	for i := 0; i < t.N; i++ {
 		file.Seek(0, 0)
 
-		_, err = image.ParseDotImage(file)
+		_, err = dot.ParseDotPng(file)
 		if err != nil {
 			panic(err)
 		}
@@ -162,7 +162,7 @@ func BenchmarkParseDotImage(t *testing.B) {
 }
 
 // パース済み画像情報を読み込む
-func BenchmarkLoadParsedDotImage(t *testing.B) {
+func BenchmarkLoadDotData(t *testing.B) {
 	file, err := os.Open(dotsfile)
 	if err != nil {
 		panic(err)
@@ -173,7 +173,7 @@ func BenchmarkLoadParsedDotImage(t *testing.B) {
 	for i := 0; i < t.N; i++ {
 		file.Seek(0, 0)
 
-		_, err = image.LoadDotImageData(file)
+		_, err = dot.LoadDotData(file)
 		if err != nil {
 			panic(err)
 		}

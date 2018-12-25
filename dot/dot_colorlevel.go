@@ -1,12 +1,12 @@
-package image
+package dot
 
 import (
 	"log"
 	"math/rand"
 
-	"pixela_art/src/lib/numeric"
-	"pixela_art/src/lib/svg"
-	test "pixela_art/src/lib/testify"
+	"github.com/wordijp/pixelart/graph"
+	"github.com/wordijp/pixelart/lib/numeric"
+	test "github.com/wordijp/pixelart/lib/testify"
 )
 
 // ColorLevels -- 適用する色段階一覧
@@ -15,7 +15,7 @@ type ColorLevels struct {
 }
 
 // BuildColorLevels -- 各ドットのcolor levelを生成する
-func BuildColorLevels(dots DotImageData, agg svg.PixelaAggregateMap) ColorLevels {
+func BuildColorLevels(dots Data, agg graph.AggregateMap) ColorLevels {
 	cl := ColorLevels{}
 	cl.levels = make([]int, len(dots.Elems), len(dots.Elems))
 

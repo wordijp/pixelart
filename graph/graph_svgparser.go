@@ -1,31 +1,31 @@
-// pixelaのsvgデータをパースする
+// svgグラフデータをパースする
 
-package svg
+package graph
 
 import (
 	"io"
 	"strconv"
 
-	color "pixela_art/src/lib/color"
-	date "pixela_art/src/lib/date"
-
 	SVG "github.com/wordijp/svgparser"
+
+	color "github.com/wordijp/pixelart/lib/color"
+	date "github.com/wordijp/pixelart/lib/date"
 )
 
-// PixelaData -- SVGパースデータ
-type PixelaData struct {
-	Elems []PixelaDataElement
+// Data -- SVGパースデータ
+type Data struct {
+	Elems []DataElement
 }
 
-// PixelaDataElement -- 1要素
-type PixelaDataElement struct {
+// DataElement -- 1要素
+type DataElement struct {
 	Date  date.Date  // svg: data-date
 	Count int        // svg: data-count
 	Rgb   color.RGB8 // svg: fill
 }
 
-// ParsePixelaSvg -- PixelaのSVG文字列をパースする
-func ParsePixelaSvg(r io.Reader) (data PixelaData, err error) {
+// ParseCalendarGraphSvg -- Calendar Graph SVG文字列をパースする
+func ParseCalendarGraphSvg(r io.Reader) (data Data, err error) {
 	svg, err := SVG.Parse(r, false)
 	if err != nil {
 		return
@@ -41,7 +41,7 @@ func ParsePixelaSvg(r io.Reader) (data PixelaData, err error) {
 	return
 }
 
-func parseElement(oData *PixelaData, svgElem *SVG.Element) error {
+func parseElement(oData *Data, svgElem *SVG.Element) error {
 	switch svgElem.Name {
 	case "rect":
 		parsed, err := parseRect(svgElem)
@@ -63,7 +63,7 @@ func parseElement(oData *PixelaData, svgElem *SVG.Element) error {
 	return nil
 }
 
-func parseRect(rectElem *SVG.Element) (elem PixelaDataElement, err error) {
+func parseRect(rectElem *SVG.Element) (elem DataElement, err error) {
 	date, err := date.FromString(rectElem.Attributes["data-date"])
 	if err != nil {
 		return
@@ -77,7 +77,7 @@ func parseRect(rectElem *SVG.Element) (elem PixelaDataElement, err error) {
 		return
 	}
 
-	elem = PixelaDataElement{
+	elem = DataElement{
 		Date:  date,
 		Count: count,
 		Rgb:   rgb,

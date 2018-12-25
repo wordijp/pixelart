@@ -1,4 +1,4 @@
-package image
+package dot
 
 import (
 	"bytes"
@@ -9,25 +9,27 @@ import (
 	svgo "github.com/ajstarks/svgo"
 	"github.com/vmihailenco/msgpack"
 
-	color "pixela_art/src/lib/color"
-	"pixela_art/src/lib/math"
+	color "github.com/wordijp/pixelart/lib/color"
+	"github.com/wordijp/pixelart/lib/math"
+
+	"github.com/wordijp/pixelart/graph"
 )
 
-// DotImageData -- ドット用画像をパースする
-type DotImageData struct {
-	Elems      []DotImageElement
+// Data -- ドットアート用データ
+type Data struct {
+	Elems      []DataElement
 	MinX, MaxX int16
 	MinY, MaxY int16
 }
 
-// DotImageElement -- ドット情報
-type DotImageElement struct {
+// DataElement -- ドット情報
+type DataElement struct {
 	X, Y int16
 	Rgb  color.RGB8
 }
 
-// ParseDotImage -- ドットアート用の画像をパースする
-func ParseDotImage(r io.Reader) (data DotImageData, err error) {
+// ParseDotPng -- ドットアート用の画像をパースする
+func ParseDotPng(r io.Reader) (data Data, err error) {
 	img, err := png.Decode(r)
 	if err != nil {
 		return
@@ -41,7 +43,7 @@ func ParseDotImage(r io.Reader) (data DotImageData, err error) {
 			_, _, _, a := c.RGBA()
 			// 透明は弾く
 			if a > 0 {
-				data.Elems = append(data.Elems, DotImageElement{
+				data.Elems = append(data.Elems, DataElement{
 					X:   int16(x),
 					Y:   int16(y),
 					Rgb: color.RGB8Model.Convert(c).(color.RGB8),
@@ -58,9 +60,9 @@ func ParseDotImage(r io.Reader) (data DotImageData, err error) {
 	return
 }
 
-// Save -- ドット情報を書き出す
+// WriteDotData -- ドット情報を書き出す
 // NOTE: パース済みデータを読み書きして高速化
-func (d *DotImageData) Save(w io.Writer) error {
+func (d *Data) WriteDotData(w io.Writer) error {
 	buf, err := msgpackEncode(d)
 	if err != nil {
 		return err
@@ -73,7 +75,7 @@ func (d *DotImageData) Save(w io.Writer) error {
 
 	return nil
 }
-func msgpackEncode(d *DotImageData) (*bytes.Buffer, error) {
+func msgpackEncode(d *Data) (*bytes.Buffer, error) {
 	buf := bytes.NewBuffer(nil)
 	encoder := msgpack.NewEncoder(buf)
 
@@ -117,12 +119,12 @@ func msgpackEncode(d *DotImageData) (*bytes.Buffer, error) {
 	return buf, nil
 }
 
-// LoadDotImageData -- ドット情報を読み込む
-func LoadDotImageData(r io.Reader) (data DotImageData, err error) {
+// LoadDotData -- ドット情報を読み込む
+func LoadDotData(r io.Reader) (data Data, err error) {
 	return msgpackDecode(r)
 }
 
-func msgpackDecode(r io.Reader) (data DotImageData, err error) {
+func msgpackDecode(r io.Reader) (data Data, err error) {
 	decoder := msgpack.NewDecoder(r)
 
 	var length uint32
@@ -130,7 +132,7 @@ func msgpackDecode(r io.Reader) (data DotImageData, err error) {
 		return
 	}
 
-	data.Elems = make([]DotImageElement, length, length)
+	data.Elems = make([]DataElement, length, length)
 	for i := uint32(0); i < length; i++ {
 		// ビット情報からデコード
 		var bits uint64
@@ -158,10 +160,20 @@ func msgpackDecode(r io.Reader) (data DotImageData, err error) {
 	return
 }
 
-// ApplyColorLevels -- ドットにカラーレベルを適用する
-func (d DotImageData) ApplyColorLevels(cl ColorLevels, colorLevelPercentage []float64) DotImageData {
-	dots := DotImageData{
-		Elems: make([]DotImageElement, len(d.Elems), len(d.Elems)),
+// Convert -- Graph SVGをもとにドットデータを変換する
+func (d Data) Convert(g graph.Data) Data {
+	agg := graph.Aggregate(g)
+
+	cl := BuildColorLevels(d, agg)
+
+	levelPercentage := []float64{0.1, 0.325, 0.55, 0.775, 1.0}
+	return d.ApplyColorLevels(cl, levelPercentage)
+}
+
+// applyColorLevels -- ドットにカラーレベルを適用する
+func (d Data) ApplyColorLevels(cl ColorLevels, colorLevelPercentage []float64) Data {
+	dots := Data{
+		Elems: make([]DataElement, len(d.Elems), len(d.Elems)),
 		MinX:  d.MinX,
 		MaxX:  d.MaxX,
 		MinY:  d.MinY,
@@ -188,8 +200,8 @@ func (d DotImageData) ApplyColorLevels(cl ColorLevels, colorLevelPercentage []fl
 	return dots
 }
 
-// WriteSvg -- SVGとして書き出す
-func (d DotImageData) WriteSvg(w io.Writer) {
+// WriteSvgString -- SVGとして書き出す
+func (d Data) WriteSvgString(w io.Writer) {
 	s := svgo.New(w)
 
 	s.Startraw(fmt.Sprintf("viewBox=\"%d %d %d %d\"", d.MinX*10, d.MinY*10, (d.MaxX-d.MinX)*10, (d.MaxY-d.MinY)*10))

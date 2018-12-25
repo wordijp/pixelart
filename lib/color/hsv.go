@@ -1,7 +1,7 @@
 package color
 
 import (
-	mymath "pixela_art/src/lib/math"
+	mymath "github.com/wordijp/pixelart/lib/math"
 )
 
 // HSV -- hsv色空間
