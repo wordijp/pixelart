@@ -22,7 +22,7 @@ this PSD image
 ## Installation
 
 ```
-$ go get github.com/wordijp/pixelart
+$ go get github.com/wordijp/pixelart/...
 ```
 
 ## Requirement
