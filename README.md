@@ -8,18 +8,15 @@ source Graph SVG for Calendar(for example, GitHub and [Pixela](https://pixe.la))
 
 and Image, Convert to pixel art
 
-- <img src="./doc/img/vim.png" width="80" alt="vim" title="vim">
- →
-<img src="./doc/img/dst-vim-pixela.png" width="140" alt="vim" title="vim">
-- <img src="./doc/img/grass.png" width="180" alt="vim" title="vim">
- →
-<img src="./doc/img/dst-grass.png" width="200" alt="vim" title="vim">
+- <img src="./doc/img/vim.png" width="80" alt="vim" title="vim"> →
+  <img src="./doc/img/dst-vim-pixela.png" width="140" alt="vim" title="vim">
+- <img src="./doc/img/grass.png" width="180" alt="vim" title="vim"> →
+  <img src="./doc/img/dst-grass.png" width="200" alt="vim" title="vim">
 
 this PSD image
 
-- <img src="./doc/img/calendar.png" width="300" alt="vim" title="vim">
- →
-<img src="./doc/img/dst-calendar.png" width="360" alt="vim" title="vim">
+- <img src="./doc/img/calendar.png" width="300" alt="vim" title="vim"> →
+  <img src="./doc/img/dst-calendar.png" width="360" alt="vim" title="vim">
 
 
 ## Installation
