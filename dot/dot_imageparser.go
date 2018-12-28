@@ -1,10 +1,12 @@
 package dot
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"image/png"
 	"io"
+	"strconv"
 
 	svgo "github.com/ajstarks/svgo"
 	"github.com/vmihailenco/msgpack"
@@ -202,11 +204,30 @@ func (d Data) ApplyColorLevels(cl ColorLevels, colorLevelPercentage []float64) D
 
 // WriteSvgString -- SVGとして書き出す
 func (d Data) WriteSvgString(w io.Writer) {
-	s := svgo.New(w)
+	bw := bufio.NewWriter(w)
+	defer bw.Flush()
+
+	s := svgo.New(bw)
+	defer s.End()
 
 	s.Startraw(fmt.Sprintf("viewBox=\"%d %d %d %d\"", d.MinX*10, d.MinY*10, (d.MaxX-d.MinX)*10, (d.MaxY-d.MinY)*10))
 	for _, x := range d.Elems {
-		s.Rect(int(x.X)*10, int(x.Y)*10, 9, 9, fmt.Sprintf("fill=\"%s\"", x.Rgb.ToColorCode()))
+		rect(bw, int(x.X)*10, int(x.Y)*10, 9, 9, x.Rgb)
 	}
-	s.End()
+}
+func rect(w *bufio.Writer, x, y, W, H int, rgb color.RGB8) {
+	//fmt.Fprintf(w, `<rect x="%d" y="%d" width="%d" height="%d" fill="%s" />`, int(x)*10, int(y)*10, 9, 9, rgb.ToColorCode())
+	//fmt.Fprintln(w)
+	w.WriteString(`<rect x="`)
+	w.WriteString(strconv.Itoa(x))
+	w.WriteString(`" y="`)
+	w.WriteString(strconv.Itoa(y))
+	w.WriteString(`" width="`)
+	w.WriteString(strconv.Itoa(W))
+	w.WriteString(`" height="`)
+	w.WriteString(strconv.Itoa(H))
+	w.WriteString(`" fill="`)
+	w.WriteString(rgb.ToColorCode())
+	w.WriteString(`" />`)
+	w.WriteString("\n")
 }

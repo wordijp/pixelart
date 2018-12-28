@@ -2,10 +2,13 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"testing"
 
 	"github.com/wordijp/pixelart/dot"
+	"github.com/wordijp/pixelart/graph"
+
 	"github.com/wordijp/pixelart/lib/color"
 )
 
@@ -177,5 +180,43 @@ func BenchmarkLoadDotData(t *testing.B) {
 		if err != nil {
 			panic(err)
 		}
+	}
+}
+
+// ドットアート書き出し
+func BenchmarkWriteDotData(t *testing.B) {
+	var g graph.Data
+	{
+		file, err := os.Open(graphfile)
+		if err != nil {
+			panic(err)
+		}
+		defer file.Close()
+
+		g, err = graph.ParseCalendarGraphSvg(file)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	var d dot.Data
+	{
+		file, err := os.Open(dotsfile)
+		if err != nil {
+			panic(err)
+		}
+		defer file.Close()
+
+		d, err = dot.LoadDotData(file)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	newd := d.Convert(g)
+
+	t.ResetTimer()
+	for i := 0; i < t.N; i++ {
+		newd.WriteSvgString(ioutil.Discard)
 	}
 }
