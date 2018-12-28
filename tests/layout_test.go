@@ -1,14 +1,17 @@
 package main
 
 import (
+	"io/ioutil"
 	"os"
 	"testing"
 
+	"github.com/wordijp/pixelart/graph"
 	"github.com/wordijp/pixelart/layout"
 )
 
 const (
 	psdfile    = image + "/layout/calendar.psd"
+	graphfile  = image + "/vim-pixela.svg"
 	layoutfile = tmp + "/calendar_layout.dat"
 )
 
@@ -32,7 +35,7 @@ func TestPsdLayoutParseEncodeDecode(t *testing.T) {
 
 	// TEST: エンコードテスト
 	{
-		file, err := os.OpenFile(layoutfile, os.O_WRONLY|os.O_CREATE, 0755)
+		file, err := os.Create(layoutfile)
 		if err != nil {
 			t.Errorf("error create: %s", err)
 		}
@@ -162,5 +165,41 @@ func BenchmarkLoadLayoutData(t *testing.B) {
 		if err != nil {
 			panic(err)
 		}
+	}
+}
+
+// 配置図書き出し
+func BenchmarkWriteLayoutData(t *testing.B) {
+	var g graph.Data
+	{
+		file, err := os.Open(graphfile)
+		if err != nil {
+			panic(err)
+		}
+		defer file.Close()
+
+		g, err = graph.ParseCalendarGraphSvg(file)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	var d layout.Data
+	{
+		file, err := os.Open(layoutfile)
+		if err != nil {
+			panic(err)
+		}
+		defer file.Close()
+
+		d, err = layout.LoadLayoutData(file)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	t.ResetTimer()
+	for i := 0; i < t.N; i++ {
+		d.WriteSvgString(g, ioutil.Discard)
 	}
 }

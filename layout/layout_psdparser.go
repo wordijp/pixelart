@@ -1,12 +1,15 @@
 package layout
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"image"
 	"io"
 	"log"
 	"math"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -17,6 +20,8 @@ import (
 	"github.com/wordijp/pixelart/graph"
 	color "github.com/wordijp/pixelart/lib/color"
 	test "github.com/wordijp/pixelart/lib/testify"
+
+	"github.com/wordijp/pixelart/lib/date"
 )
 
 // Data -- 配置図用画像をパースする
@@ -442,12 +447,17 @@ func msgpackDecode(r io.Reader) (data Data, err error) {
 
 // WriteSvgString -- SVGとして書き出す
 func (d Data) WriteSvgString(svgs graph.Data, w io.Writer) {
-	s := svgo.New(w)
+	bw := bufio.NewWriter(w)
+	defer bw.Flush()
+
+	s := svgo.New(bw)
+	defer s.End()
 
 	s.Startraw(fmt.Sprintf("viewBox=\"%d %d %d %d\"", d.MinX*10, d.MinY*10, (d.MaxX-d.MinX)*10, (d.MaxY-d.MinY)*10))
-	// TODO: SVG書き出し処理
-	for _, x := range d.Bg.Elems {
-		s.Rect(int(x.X)*10, int(x.Y)*10, 9, 9, fmt.Sprintf("fill=\"%s\"", x.Rgb.ToColorCode()))
+	{
+		for _, x := range d.Bg.Elems {
+			rect(bw, int(x.X)*10, int(x.Y)*10, 9, 9, x.Rgb)
+		}
 	}
 
 	now := time.Now()
@@ -455,99 +465,107 @@ func (d Data) WriteSvgString(svgs graph.Data, w io.Writer) {
 	thisMonth := int(now.Month())
 	thisDay := 1
 
-	prev := time.Date(now.Year(), now.Month()-1, 1, 0, 0, 0, 0, now.Location())
+	prev := time.Date(thisYear, time.Month(thisMonth-1), 1, 0, 0, 0, 0, time.Local)
 	prevYear := prev.Year()
 	prevMonth := int(prev.Month())
 	prevDay := 1
 	for _, x := range d.Place.Elems {
 		if x.Rgb.Equal(rgbThisMonthDays) {
 			// 一致する日付を取り出す
-			rgb, ok := func() (color.RGB8, bool) {
-				for _, y := range svgs.Elems {
-					if y.Date.Equal(thisYear, thisMonth, thisDay) {
-						return y.Rgb, true
-					}
-				}
+			dt := date.From(thisYear, thisMonth, thisDay)
+			idx := sort.Search(len(svgs.Elems), func(i int) bool {
+				dur := svgs.Elems[i].Date.Sub(dt)
+				return int(dur.Hours()) >= 0
+			})
 
-				return color.RGB8{}, false
-			}()
-			if ok {
-				rect(s, x.XY, rgb)
+			if idx >= 0 && idx < len(svgs.Elems) && svgs.Elems[idx].Date.EqualYMD(thisYear, thisMonth, thisDay) {
+				rects(bw, x.XY, svgs.Elems[idx].Rgb)
 			}
 
 			thisDay++
 		} else if x.Rgb.Equal(rgbPrevMonthDays) {
-			rgb, ok := func() (color.RGB8, bool) {
-				for _, y := range svgs.Elems {
-					if y.Date.Equal(prevYear, prevMonth, prevDay) {
-						return y.Rgb, true
-					}
-				}
+			dt := date.From(prevYear, prevMonth, prevDay)
+			idx := sort.Search(len(svgs.Elems), func(i int) bool {
+				dur := svgs.Elems[i].Date.Sub(dt)
+				return int(dur.Hours()) >= 0
+			})
 
-				return color.RGB8{}, false
-			}()
-			if ok {
-				rect(s, x.XY, rgb)
+			if idx >= 0 && idx < len(svgs.Elems) && svgs.Elems[idx].Date.EqualYMD(prevYear, prevMonth, prevDay) {
+				rects(bw, x.XY, svgs.Elems[idx].Rgb)
 			}
 
 			prevDay++
 		} else if x.Rgb.Equal(rgbMonth1) {
 			if thisMonth == 1 {
-				rect(s, x.XY, x.Rgb)
+				rects(bw, x.XY, x.Rgb)
 			}
 		} else if x.Rgb.Equal(rgbMonth2) {
 			if thisMonth == 2 {
-				rect(s, x.XY, x.Rgb)
+				rects(bw, x.XY, x.Rgb)
 			}
 		} else if x.Rgb.Equal(rgbMonth3) {
 			if thisMonth == 3 {
-				rect(s, x.XY, x.Rgb)
+				rects(bw, x.XY, x.Rgb)
 			}
 		} else if x.Rgb.Equal(rgbMonth4) {
 			if thisMonth == 4 {
-				rect(s, x.XY, x.Rgb)
+				rects(bw, x.XY, x.Rgb)
 			}
 		} else if x.Rgb.Equal(rgbMonth5) {
 			if thisMonth == 5 {
-				rect(s, x.XY, x.Rgb)
+				rects(bw, x.XY, x.Rgb)
 			}
 		} else if x.Rgb.Equal(rgbMonth6) {
 			if thisMonth == 6 {
-				rect(s, x.XY, x.Rgb)
+				rects(bw, x.XY, x.Rgb)
 			}
 		} else if x.Rgb.Equal(rgbMonth7) {
 			if thisMonth == 7 {
-				rect(s, x.XY, x.Rgb)
+				rects(bw, x.XY, x.Rgb)
 			}
 		} else if x.Rgb.Equal(rgbMonth8) {
 			if thisMonth == 8 {
-				rect(s, x.XY, x.Rgb)
+				rects(bw, x.XY, x.Rgb)
 			}
 		} else if x.Rgb.Equal(rgbMonth9) {
 			if thisMonth == 9 {
-				rect(s, x.XY, x.Rgb)
+				rects(bw, x.XY, x.Rgb)
 			}
 		} else if x.Rgb.Equal(rgbMonth10) {
 			if thisMonth == 10 {
-				rect(s, x.XY, x.Rgb)
+				rects(bw, x.XY, x.Rgb)
 			}
 		} else if x.Rgb.Equal(rgbMonth11) {
 			if thisMonth == 11 {
-				rect(s, x.XY, x.Rgb)
+				rects(bw, x.XY, x.Rgb)
 			}
 		} else if x.Rgb.Equal(rgbMonth12) {
 			if thisMonth == 12 {
-				rect(s, x.XY, x.Rgb)
+				rects(bw, x.XY, x.Rgb)
 			}
 		} else {
 			log.Printf("unknown rgb: %s xy(len:%d [0]:%d %d)", x.Rgb.ToColorCode(), len(x.XY), x.XY[0].X, x.XY[0].Y)
 		}
 	}
-
-	s.End()
 }
-func rect(s *svgo.SVG, xy []point, rgb color.RGB8) {
+func rects(bw *bufio.Writer, xy []point, rgb color.RGB8) {
 	for _, xy := range xy {
-		s.Rect(int(xy.X)*10, int(xy.Y)*10, 9, 9, fmt.Sprintf("fill=\"%s\"", rgb.ToColorCode()))
+		rect(bw, int(xy.X)*10, int(xy.Y)*10, 9, 9, rgb)
 	}
+}
+func rect(w *bufio.Writer, x, y, W, H int, rgb color.RGB8) {
+	//fmt.Fprintf(w, `<rect x="%d" y="%d" width="%d" height="%d" fill="%s" />`, int(x)*10, int(y)*10, 9, 9, rgb.ToColorCode())
+	//fmt.Fprintln(w)
+	w.WriteString(`<rect x="`)
+	w.WriteString(strconv.Itoa(x))
+	w.WriteString(`" y="`)
+	w.WriteString(strconv.Itoa(y))
+	w.WriteString(`" width="`)
+	w.WriteString(strconv.Itoa(W))
+	w.WriteString(`" height="`)
+	w.WriteString(strconv.Itoa(H))
+	w.WriteString(`" fill="`)
+	w.WriteString(rgb.ToColorCode())
+	w.WriteString(`" />`)
+	w.WriteString("\n")
 }

@@ -54,7 +54,7 @@ func TestDotParseEncodeDecode(t *testing.T) {
 
 	// TEST: エンコードテスト
 	{
-		file, err := os.OpenFile(dotsfile, os.O_WRONLY|os.O_CREATE, 0755)
+		file, err := os.Create(dotsfile)
 		if err != nil {
 			t.Errorf("error create: %s", err)
 		}

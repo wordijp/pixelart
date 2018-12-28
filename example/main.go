@@ -46,7 +46,7 @@ func doDot(g graph.Data, srcpng, dstsvg string) {
 
 	// save
 	{
-		file, err := os.OpenFile(dstsvg, os.O_WRONLY|os.O_CREATE, 0755)
+		file, err := os.Create(dstsvg)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -74,7 +74,7 @@ func doLayout(g graph.Data, srcpsd, dstsvg string) {
 
 	// save
 	{
-		file, err := os.OpenFile(dstsvg, os.O_WRONLY|os.O_CREATE, 0755)
+		file, err := os.Create(dstsvg)
 		if err != nil {
 			log.Fatal(err)
 		}

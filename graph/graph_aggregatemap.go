@@ -11,13 +11,17 @@ type AggregateMap = slicemap.MapStringInt
 
 // Aggregate -- Pixela SVGの各色段階ごとの個数を集計する
 func Aggregate(graph Data) AggregateMap {
-	sort.SliceStable(graph.Elems, func(i, j int) bool {
-		return graph.Elems[i].Count < graph.Elems[j].Count
+	// clone
+	e := make([]DataElement, len(graph.Elems))
+	copy(e, graph.Elems)
+
+	sort.SliceStable(e, func(i, j int) bool {
+		return e[i].Count < e[j].Count
 	})
 
 	// color毎のcount回数を集計する
 	m := AggregateMap{}
-	for _, x := range graph.Elems {
+	for _, x := range e {
 		color := x.Rgb.ToColorCode()
 
 		idx, ok := m.Insert(color, 1)
